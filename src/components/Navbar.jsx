@@ -25,8 +25,8 @@ export default function Navbar() {
         </ul>
         
         <div className="nav-cta-group desktop-only">
-          <a href="resume.pdf" target="_blank" className="nav-cta ghost">Resume</a>
-          <a href="mailto:prabhuprasadmishrawork@gmail.com?subject=Portfolio%20Enquiry" className="nav-cta primary">Hire Me</a>
+          <a href="resume.pdf" target="_blank" rel="noopener noreferrer" className="nav-cta ghost">Resume</a>
+          <a href="mailto:prabhuprasadmishrawork@gmail.com?subject=Portfolio%20Enquiry" target="_blank" rel="noopener noreferrer" className="nav-cta primary">Hire Me</a>
         </div>
 
         <button 
@@ -50,8 +50,8 @@ export default function Navbar() {
           <li><a href="#contact" onClick={handleLinkClick}>Contact</a></li>
         </ul>
         <div className="mobile-cta-group">
-          <a href="resume.pdf" target="_blank" className="nav-cta ghost" onClick={handleLinkClick}>Resume</a>
-          <a href="mailto:prabhuprasadmishrawork@gmail.com?subject=Portfolio%20Enquiry" className="nav-cta primary" onClick={handleLinkClick}>Hire Me</a>
+          <a href="resume.pdf" target="_blank" rel="noopener noreferrer" className="nav-cta ghost" onClick={handleLinkClick}>Resume</a>
+          <a href="mailto:prabhuprasadmishrawork@gmail.com?subject=Portfolio%20Enquiry" target="_blank" rel="noopener noreferrer" className="nav-cta primary" onClick={handleLinkClick}>Hire Me</a>
         </div>
       </div>
     </>

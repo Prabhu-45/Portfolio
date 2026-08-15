@@ -3,25 +3,23 @@
 if (window.gsap) {
   if (window.ScrollTrigger) window.gsap.registerPlugin(window.ScrollTrigger);
   if (window.TextPlugin) window.gsap.registerPlugin(window.TextPlugin);
+  if (window.ScrollToPlugin) window.gsap.registerPlugin(window.ScrollToPlugin);
 }
 
 var isTouch = window.matchMedia('(any-pointer: coarse)').matches;
 
-  // 1. MINIMAL DOTTED SLITHER & SPINNING HALO CURSOR
+  // 1. PREMIUM CUSTOM CURSOR
 window.initCursor = function() {
-  const dots = document.querySelectorAll('.cursor-dot');
+  const mainDot = document.querySelector('.main-dot');
+  const ringDot = document.querySelector('.ring-dot');
   const container = document.getElementById('cursor-container');
-  const numDots = dots.length;
 
-  if (!isTouch && container && numDots > 0) {
-    const dotPositions = [];
-    for (let i = 0; i < numDots; i++) {
-      dotPositions.push({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-    }
-
-    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+  if (!isTouch && container && mainDot && ringDot) {
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let ringX = mouseX;
+    let ringY = mouseY;
     let isHovered = false;
-    let spinAngle = 0;
 
     window.addEventListener('mousemove', e => {
       mouseX = e.clientX;
@@ -29,38 +27,13 @@ window.initCursor = function() {
     });
 
     function updateCursor() {
-      spinAngle += 0.035; // Increment spinning rotation of outer halo
+      // Main dot instantly follows mouse
+      gsap.set(mainDot, { x: mouseX, y: mouseY, xPercent: -50, yPercent: -50 });
 
-      // Lead dot 0 rapid easing
-      dotPositions[0].x += (mouseX - dotPositions[0].x) * 0.35;
-      dotPositions[0].y += (mouseY - dotPositions[0].y) * 0.35;
-
-      for (let i = 1; i < numDots; i++) {
-        if (isHovered) {
-          // Circular orbital coordinates (dotted spinning halo surrounding pointer)
-          const angle = spinAngle + (i / (numDots - 1)) * Math.PI * 2;
-          const radius = 18; // Orbit boundary radius
-          const targetX = mouseX + Math.cos(angle) * radius;
-          const targetY = mouseY + Math.sin(angle) * radius;
-
-          // Eases towards orbit coordinate elastically
-          dotPositions[i].x += (targetX - dotPositions[i].x) * 0.22;
-          dotPositions[i].y += (targetY - dotPositions[i].y) * 0.22;
-        } else {
-          // Chain coordinate lag (curved dotted tail slither)
-          const targetX = dotPositions[i - 1].x;
-          const targetY = dotPositions[i - 1].y;
-          const speedFactor = 0.35 - i * 0.022; // Progressive deceleration drag
-
-          dotPositions[i].x += (targetX - dotPositions[i].x) * speedFactor;
-          dotPositions[i].y += (targetY - dotPositions[i].y) * speedFactor;
-        }
-      }
-
-      // Render coordinates using GPU-optimized transform
-      dots.forEach((dot, i) => {
-        gsap.set(dot, { x: dotPositions[i].x, y: dotPositions[i].y });
-      });
+      // Ring lags slightly
+      ringX += (mouseX - ringX) * 0.15;
+      ringY += (mouseY - ringY) * 0.15;
+      gsap.set(ringDot, { x: ringX, y: ringY, xPercent: -50, yPercent: -50 });
 
       requestAnimationFrame(updateCursor);
     }
@@ -230,8 +203,17 @@ if (heroCanvas) {
     renderer.setSize(heroCanvas.clientWidth, heroCanvas.clientHeight);
   });
 
+  let heroInView = true;
+  if (heroCanvas) {
+    const observer = new IntersectionObserver((entries) => {
+      heroInView = entries[0].isIntersecting;
+    });
+    observer.observe(heroCanvas);
+  }
+
   function animate() {
     requestAnimationFrame(animate);
+    if (!heroInView) return;
 
     mouse.x += (mouse.targetX - mouse.x) * 0.05;
     mouse.y += (mouse.targetY - mouse.y) * 0.05;
@@ -400,8 +382,17 @@ if (projCanvasContainer) {
     renderer.setSize(projCanvasContainer.clientWidth, projCanvasContainer.clientHeight);
   });
 
+  let torusInView = true;
+  if (projCanvasContainer) {
+    const observer = new IntersectionObserver((entries) => {
+      torusInView = entries[0].isIntersecting;
+    });
+    observer.observe(projCanvasContainer);
+  }
+
   function renderProj() {
     requestAnimationFrame(renderProj);
+    if (!torusInView) return;
     rotSpeed += (targetRotSpeed - rotSpeed) * 0.08;
     torusKnot.rotation.x += rotSpeed;
     torusKnot.rotation.y += rotSpeed * 1.4;
@@ -411,16 +402,64 @@ if (projCanvasContainer) {
   }
   renderProj();
 }
-
 // 8. GSAP PAGE-LOAD & SCROLL-TRIGGERED REVEAL SYSTEM
 let animationsInitialized = false;
 window.initAnimations = function() {
-  if (animationsInitialized) return;
-  animationsInitialized = true;
-  // Hero Entrance Sequence
-  const tl = window.gsap.timeline();
-  tl.fromTo('.char', { opacity: 0, x: -10 }, { duration: 0.05, opacity: 1, x: 0, stagger: 0.03, ease: 'none', delay: 0.15 })
-    .to('.hero-tag', { duration: 1.5, text: "AI Engineer & Full-Stack Developer", ease: "none" }, '-=0.2')
+    if (animationsInitialized) return;
+    animationsInitialized = true;
+
+    // Lenis Smooth Scroll Setup
+    if (window.Lenis) {
+      const lenis = new window.Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+        direction: 'vertical',
+        smooth: true,
+      });
+
+      lenis.on('scroll', window.ScrollTrigger.update);
+      window.gsap.ticker.add((time) => {
+        lenis.raf(time * 1000);
+      });
+      window.gsap.ticker.lagSmoothing(0);
+    }
+
+    // Global Section Headings Wipe
+    document.querySelectorAll('.s-title').forEach(title => {
+      // Avoid conflict if there is already an inline style or specific animation
+      if (title.closest('#about')) return; 
+      
+      window.gsap.fromTo(title,
+        { clipPath: "inset(0% 100% 0% 0%)" },
+        { 
+          clipPath: "inset(0% 0% 0% 0%)", 
+          duration: 1.2, 
+          ease: "power3.inOut",
+          scrollTrigger: {
+            trigger: title.closest('.s-head') || title.closest('section'),
+            start: "top 85%",
+            once: true
+          }
+        }
+      );
+    });
+
+    // Hero Entrance Sequence with Loader
+    const tl = window.gsap.timeline();
+    
+    const loader = document.getElementById('global-loader');
+    if (loader) {
+      tl.to(loader, {
+        duration: 0.8,
+        yPercent: -100,
+        ease: "power4.inOut",
+        delay: 0.6
+      })
+      .set(loader, { display: "none" }, "-=0.2");
+    }
+
+    tl.fromTo('.char', { opacity: 0, x: -10 }, { duration: 0.05, opacity: 1, x: 0, stagger: 0.03, ease: 'none', delay: 0 }, "-=0.2")
+      .to('.hero-tag', { duration: 1.5, text: "AI Engineer & Full-Stack Developer", ease: "none" }, '-=0.2')
     .fromTo('.hero-desc', { y: 25, opacity: 0 }, { duration: 0.75, y: 0, opacity: 1, ease: 'power4.out' }, '-=0.5')
     .fromTo('.hero-actions > a', { y: 20, opacity: 0 }, { duration: 0.6, y: 0, opacity: 1, stagger: 0.15, ease: 'back.out(1.5)' }, '-=0.4')
     .fromTo('.hero-stats > div', { y: 25, opacity: 0 }, { duration: 0.7, y: 0, opacity: 1, stagger: 0.12, ease: 'back.out(1.5)' }, '-=0.65')
@@ -928,6 +967,39 @@ window.initAnimations = function() {
 
   const contactSec = document.getElementById('contact');
   const cursor = document.getElementById('cursor-container');
+
+  // Back to top button GSAP
+  const backBtn = document.querySelector('.ft-back');
+  if (backBtn) {
+    gsap.to(backBtn, {
+      opacity: 1,
+      pointerEvents: "auto",
+      scrollTrigger: {
+        trigger: document.body, 
+        start: "300px top",
+        toggleActions: "play none none reverse"
+      }
+    });
+
+    backBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      gsap.to(window, { scrollTo: 0, duration: 1, ease: "power3.inOut" });
+    });
+  }
+
+  // Smooth scroll for all anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      const targetId = this.getAttribute('href');
+      if (targetId === '#' || targetId === '#hero') return; 
+      
+      const target = document.querySelector(targetId);
+      if (target) {
+        e.preventDefault();
+        gsap.to(window, { scrollTo: target, duration: 1, ease: "power3.inOut" });
+      }
+    });
+  });
 
   // Initialize Rive Boy Animation
   const RiveEngine = (typeof rive !== 'undefined') ? rive : ((typeof Rive !== 'undefined') ? Rive : null);
