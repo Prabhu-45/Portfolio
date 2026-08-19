@@ -24,11 +24,22 @@ export default function Contact() {
         </div>
       </div>
 
-      <form className="ct-form" onSubmit={(e) => e.preventDefault()}>
-        <input type="text" placeholder="Name" className="ct-input" required />
-        <input type="email" placeholder="Email" className="ct-input" required />
-        <textarea placeholder="Message" className="ct-textarea" rows="4" required></textarea>
-        <button type="submit" className="ct-submit">Send Message</button>
+      <form className="ct-form" onSubmit={(e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const name = formData.get('name');
+        const email = formData.get('email');
+        const message = formData.get('message');
+        const text = `Hi Prabhu,\n\nMy name is ${name} (${email}).\n\n${message}`;
+        
+        // Use window.location.href for deep linking to the native SMS app
+        window.location.href = `sms:+919692839751?body=${encodeURIComponent(text)}`;
+      }}>
+        <input type="text" name="name" placeholder="Name" className="ct-input" required />
+        <input type="email" name="email" placeholder="Email" className="ct-input" required />
+        <textarea name="message" placeholder="Message" className="ct-textarea" rows="4" required></textarea>
+        
+        <button type="submit" className="ct-submit">Send via SMS</button>
       </form>
     </div>
 
