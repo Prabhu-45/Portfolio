@@ -11,6 +11,7 @@ import Experience from './components/Experience';
 import Achievements from './components/Achievements';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import Chatbot from './components/Chatbot';
 
 export default function App() {
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function App() {
       <Achievements />
       <Contact />
       <Footer />
+      <Chatbot />
     </div>
   );
 }
