@@ -1,15 +1,29 @@
 import { GoogleGenAI } from '@google/genai';
 
-// We initialize the Google Gen AI client with the API key from environment variables.
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Attempt to load .env if running in Node environment without preloaded env
+if (!process.env.GEMINI_API_KEY && typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch (e) {
+    // Ignore if .env doesn't exist (e.g. in Vercel production where env vars are injected)
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error('Chat API Error: GEMINI_API_KEY environment variable is not defined.');
+    return res.status(500).json({ error: 'GEMINI_API_KEY is not configured in environment variables.' });
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+
   try {
-    const { message, history } = req.body;
+    const { message, history } = req.body || {};
 
     // Define the strict system instructions to keep the bot professional and focused
     const systemInstruction = `You are Prabhu's professional portfolio assistant. 

@@ -42,15 +42,19 @@ export default function Chatbot() {
       });
 
       if (!response.ok) {
-        throw new Error('API Error');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'API Error');
       }
 
       const data = await response.json();
       
-      setMessages([...newMessages, { role: 'model', text: data.text }]);
+      setMessages([...newMessages, { role: 'model', text: data.text || 'I could not generate a response.' }]);
     } catch (error) {
       console.error(error);
-      setMessages([...newMessages, { role: 'model', text: 'Sorry, I am having trouble connecting right now. Please try again later.' }]);
+      const errorMsg = error.message && error.message.includes('GEMINI_API_KEY')
+        ? 'GEMINI_API_KEY is not configured yet. Please add it in your Vercel Project Settings → Environment Variables.'
+        : 'Sorry, I am having trouble connecting right now. Please try again later.';
+      setMessages([...newMessages, { role: 'model', text: errorMsg }]);
     } finally {
       setIsLoading(false);
     }
